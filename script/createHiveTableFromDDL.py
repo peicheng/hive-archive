@@ -25,7 +25,7 @@ Usage:
 	FLAG DEFINE
 """
 #if exec cmd set 1,not set 0 for debug and show cmd
-hiveexec=0
+hiveexecflag=0
 
 """
 	DEF
@@ -63,23 +63,37 @@ def getDDLlist(DDLNAME):
 """
 	parse DDL from RDB
 """
-DDLINPUTNAME=sys.argv[1]
-HIVETABLENAME=DDLINPUTNAME.split('/')[-1]
-#print HIVETABLENAME
-CREATECMD="CREATE TABLE "+HIVETABLENAME+" ("
-for l in NEWDDLLIST[:-1]:
-    #CM_TX_DT                timestamp          
-    if 'DT' in l:
-        CREATECMD=CREATECMD+'\n'+l+" timestamp,"
-    else:
-        CREATECMD=CREATECMD+'\n'+l+" STRING,"
 
-if 'DT' in l:
-    CREATECMD=CREATECMD+"\n"+NEWDDLLIST[-1]+" TIMESTAMP)"
-else:
-    CREATECMD=CREATECMD+"\n"+NEWDDLLIST[-1]+" STRING)"
+#print HIVETABLENAME
+def createHiveTableCMD(HIVETABLENAME,NEWDDLLIST):
+	CREATECMD="CREATE TABLE "+HIVETABLENAME+" ("
+	for l in NEWDDLLIST[:-1]:
+		#CM_TX_DT                timestamp          
+		if 'DT' in l:
+			CREATECMD=CREATECMD+'\n'+l+" timestamp,"
+		else:
+			CREATECMD=CREATECMD+'\n'+l+" STRING,"
+
+	if 'DT' in l:
+		CREATECMD=CREATECMD+"\n"+NEWDDLLIST[-1]+" TIMESTAMP)"
+	else:
+		CREATECMD=CREATECMD+"\n"+NEWDDLLIST[-1]+" STRING)"
+	return CREATECMD
+"""
+	execHivecmd
+"""
+def execHivecmd(cmd):
+        execuser='sudo -u hdfs hive -e "'
+        cmd=execuser+cmd+' ;"'
+        print os.popen(cmd).read()
 
 if __name__ == "__main__":
 	print 'lol'
 	colorprint('Test getDDLlist')
-	print getDDLlist(sys.argv[1])
+	NEWDDLLIST=getDDLlist(sys.argv[1])
+	print NEWDDLLIST
+	DDLINPUTNAME=sys.argv[1]
+	HIVETABLENAME=DDLINPUTNAME.split('/')[-1].split('.')[0]
+	print createHiveTableCMD(HIVETABLENAME,NEWDDLLIST)
+	if hiveexecflag == 1:
+		execHivecmd(createHiveTableCMD(HIVETABLENAME,NEWDDLLIST))
