@@ -1,0 +1,7 @@
+CREATE TABLE  WEBTABLE
+(
+  WEBPAGEID  NUMBER(7)               NOT NULL,
+  URL      VARCHAR2(32 BYTE),
+  TITLE       VARCHAR2(60 BYTE),
+  CDATE              DATE
+);
