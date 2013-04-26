@@ -4,9 +4,11 @@
 	=========================
 	Goal: given RDB DDL to gen hive table 
 	Usage:
-		python createHiveTableFromDDL.py [ddlfile]
+		python createHiveTableFromDDL.py [ddlfile] [[FIELDDELIMITER]] [[LINEDELIMITER]]
 		ex:
 		python createHiveTableFromDDL.py ../DDL/WEBLOG.ddl
+		python createHiveTableFromDDL.py ../DDL/WEBLOG.ddl '\t'
+		python createHiveTableFromDDL.py ../DDL/WEBLOG.ddl '\t'	'\n'
 	History:
 	
 """
@@ -25,7 +27,7 @@ Usage:
 	FLAG DEFINE
 """
 #if exec cmd set 1,not set 0 for debug and show cmd
-hiveexecflag=0
+hiveexecflag=1
 
 """
 	DEF
@@ -65,19 +67,32 @@ def getDDLlist(DDLNAME):
 """
 
 #print HIVETABLENAME
-def createHiveTableCMD(HIVETABLENAME,NEWDDLLIST):
-	CREATECMD="CREATE TABLE "+HIVETABLENAME+" ("
+#def createHiveTableCMD(HIVETABLENAME,NEWDDLLIST,FIELDDELIMITER):
+def createHiveTableCMD(*args,**kwargs):
+	'''
+	argslist=['HIVETABLENAME','NEWDDLLIST','FIELDDELIMITER']
+	'''
+	HIVETABLENAME=args[0]
+	NEWDDLLIST=args[1]
+	#print len(args),args
+	CREATECMD="CREATE TABLE IF NOT EXISTS "+HIVETABLENAME+" ("
 	for l in NEWDDLLIST[:-1]:
 		#CM_TX_DT                timestamp          
 		if 'DT' in l:
 			CREATECMD=CREATECMD+'\n'+l+" timestamp,"
 		else:
 			CREATECMD=CREATECMD+'\n'+l+" STRING,"
-
 	if 'DT' in l:
 		CREATECMD=CREATECMD+"\n"+NEWDDLLIST[-1]+" TIMESTAMP)"
 	else:
 		CREATECMD=CREATECMD+"\n"+NEWDDLLIST[-1]+" STRING)"
+	
+	if len(args)>2:
+		FIELDDELIMITER=args[2]
+		CREATECMD=CREATECMD+"\nROW FORMAT DELIMITED\nFIELDS TERMINATED BY '"+FIELDDELIMITER+"'"
+	if len(args)>3:
+		LINEDELIMITER=args[3]
+		CREATECMD=CREATECMD+"\nLINES TERMINATED BY '"+LINEDELIMITER+"'"
 	return CREATECMD
 """
 	execHivecmd
@@ -93,7 +108,22 @@ if __name__ == "__main__":
 	NEWDDLLIST=getDDLlist(sys.argv[1])
 	print NEWDDLLIST
 	DDLINPUTNAME=sys.argv[1]
-	HIVETABLENAME=DDLINPUTNAME.split('/')[-1].split('.')[0]
-	print createHiveTableCMD(HIVETABLENAME,NEWDDLLIST)
+	#WEBLOG_130426
+	#HIVETABLENAME=DDLINPUTNAME.split('/')[-1].split('.')[0]
+	#WEBLOG
+	HIVETABLENAME=DDLINPUTNAME.split('/')[-1].split('_')[0]
+	
+	"""
+	if len(sys.argv)>2:
+		print createHiveTableCMD(HIVETABLENAME,NEWDDLLIST,sys.argv[2])
+	else:
+		print createHiveTableCMD(HIVETABLENAME,NEWDDLLIST)
+	if len(sys.argv)>3:
+		print createHiveTableCMD(HIVETABLENAME,NEWDDLLIST,sys.argv[2],sys.argv[3])
+	"""
+	print createHiveTableCMD(HIVETABLENAME,NEWDDLLIST,*sys.argv[2:])
+	#print createHiveTableCMD(*sys.argv[0:])
+	
 	if hiveexecflag == 1:
-		execHivecmd(createHiveTableCMD(HIVETABLENAME,NEWDDLLIST))
+		colorprint('=====execHiveCmd=====')
+		execHivecmd(createHiveTableCMD(HIVETABLENAME,NEWDDLLIST,*sys.argv[2:]))
