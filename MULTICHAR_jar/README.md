@@ -18,7 +18,7 @@ how to use
 DDL
 ====
 
-    CREATE TABLE SAACNTXN(
+    CREATE TABLE WEBLOG(
     (
     WEBPAGEID  STRING,
     URL STRING,
